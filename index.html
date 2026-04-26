@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0f3d35">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="My Jamea Timetable">
+  <title>My Jamea Timetable</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="icons/icon-512.png">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="shell">
+    <section class="hero card">
+      <div>
+        <p class="eyebrow">Live + offline iPhone timetable</p>
+        <h1>My Jamea Timetable</h1>
+        <p class="lede">Open your official Jamea timetable in one tap, keep it refreshing, and still have an offline backup schedule on your phone.</p>
+      </div>
+      <div class="clock" aria-live="polite">
+        <span id="nowTime">--:--</span>
+        <small id="nowDate">Loading...</small>
+      </div>
+    </section>
+
+    <section class="status-grid">
+      <article class="card focus-card">
+        <span class="label">Right now</span>
+        <h2 id="currentTitle">No class saved</h2>
+        <p id="currentMeta">Add your timetable once, then this app keeps working offline.</p>
+        <div class="meter" aria-hidden="true"><span id="progressBar"></span></div>
+      </article>
+      <article class="card">
+        <span class="label">Next up</span>
+        <h2 id="nextTitle">Nothing scheduled</h2>
+        <p id="nextMeta">Your next class will appear here automatically.</p>
+      </article>
+    </section>
+
+    <section class="card live-card">
+      <div class="live-copy">
+        <span class="label">Official live timetable</span>
+        <h2>Jamea student jadwal</h2>
+        <p id="liveStatus">Live page ready. Sign in once if Jamea asks, then your browser should remember the session.</p>
+      </div>
+      <div class="button-row wrap">
+        <a id="liveOpenLink" class="button" href="https://beta.jameasaifiyah.org/student/studentjadwalreport?mmid=1372" target="_blank" rel="noopener">Open live page</a>
+        <button id="fullLiveButton" type="button">Full live mode</button>
+        <button id="liveRefreshButton" class="secondary" type="button">Refresh live view</button>
+      </div>
+      <label class="toggle-row">
+        <input id="autoLiveToggle" type="checkbox">
+        <span>Auto-open the official live timetable when this app starts</span>
+      </label>
+      <iframe
+        id="liveFrame"
+        title="Official Jamea timetable"
+        src="https://beta.jameasaifiyah.org/student/studentjadwalreport?mmid=1372"
+        loading="lazy"
+        referrerpolicy="no-referrer">
+      </iframe>
+      <p class="hint">If the box below stays blank, Jamea is blocking embedded viewing for security. Use Open live page instead; it will still show the real-time timetable from the official site.</p>
+    </section>
+
+    <section class="card controls">
+      <div>
+        <span class="label">Offline backup</span>
+        <h2 id="dayTitle">Today’s schedule</h2>
+      </div>
+      <div class="button-row">
+        <button id="installButton" class="secondary">Install app</button>
+        <button id="editButton">Edit timetable</button>
+      </div>
+    </section>
+
+    <section id="todayList" class="timeline" aria-label="Today timetable"></section>
+
+    <dialog id="editorDialog">
+      <form method="dialog" class="editor card">
+        <header>
+          <div>
+            <p class="eyebrow">Saved on this phone</p>
+            <h2>Edit timetable</h2>
+          </div>
+          <button value="cancel" class="icon-button" aria-label="Close editor">×</button>
+        </header>
+        <p class="hint">Use one line per class: <strong>day,start,end,subject,room,teacher</strong>. Example: <code>Monday,08:00,08:45,Nahw,Room 4,</code></p>
+        <textarea id="timetableInput" spellcheck="false"></textarea>
+        <div class="button-row wrap">
+          <button id="loadSample" type="button" class="secondary">Load sample</button>
+          <button id="exportButton" type="button" class="secondary">Copy backup</button>
+          <button id="saveButton" value="default">Save timetable</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="installDialog">
+      <form method="dialog" class="editor card">
+        <header>
+          <div>
+            <p class="eyebrow">iPhone setup</p>
+            <h2>Install on your Home Screen</h2>
+          </div>
+          <button value="cancel" class="icon-button" aria-label="Close install instructions">×</button>
+        </header>
+        <ol class="steps">
+          <li>Open this app link in Safari on your iPhone.</li>
+          <li>Tap the Share button.</li>
+          <li>Choose Add to Home Screen.</li>
+          <li>Open My Jamea Timetable from your Home Screen.</li>
+        </ol>
+        <p class="hint">After the first load, the app files are cached so you do not need to keep downloading it again.</p>
+        <div class="button-row">
+          <button value="default">Close</button>
+        </div>
+      </form>
+    </dialog>
+  </main>
+  <script src="app.js" defer></script>
+</body>
+</html>

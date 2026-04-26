@@ -1,0 +1,14 @@
+{
+  "name": "My Jamea Timetable",
+  "short_name": "Timetable",
+  "description": "An offline timetable app for quickly seeing the current and next Jamea class.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f7ead0",
+  "theme_color": "#0f3d35",
+  "icons": [
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" },
+    { "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
