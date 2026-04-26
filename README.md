@@ -20,30 +20,7 @@ No separate app can force Jamea to allow embedding or cross-site reading. Only J
 
 The saved PDF is the main offline backup, so you can open your latest timetable from the app even when the official site is unavailable.
 
-## Timetable format
 
-Use one class per line:
+## Open The Site
 
-```csv
-Day,Start,End,Subject,Room,Teacher
-Monday,08:00,08:45,Nahw,Room 4,
-Monday,09:00,09:45,Fiqh,Room 2,
-```
-
-Valid days are `Sunday`, `Monday`, `Tuesday`, `Wednesday`, `Thursday`, `Friday`, and `Saturday`.
-
-## Run locally
-
-```bash
-npm start
-```
-
-Then open `http://localhost:4173`.
-
-## Put it on your iPhone
-
-1. Host this folder on a static site host such as GitHub Pages, Netlify, Vercel, or Cloudflare Pages.
-2. Open the hosted link in Safari on your iPhone.
-3. Tap Share.
-4. Tap Add to Home Screen.
-5. Open it from your Home Screen like a normal app.
+      Vist the URL: https://lego-man53.github.io/IOS-TimeTable/
