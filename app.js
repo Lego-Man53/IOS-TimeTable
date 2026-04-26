@@ -1,18 +1,9 @@
 const STORAGE_KEY = 'jamea-timetable-v1';
-const AUTO_LIVE_KEY = 'jamea-auto-live-v1';
+const PDF_META_KEY = 'jamea-timetable-pdf-meta-v1';
+const PDF_DB_NAME = 'jamea-timetable-pdf-db';
+const PDF_STORE_NAME = 'pdfs';
 const LIVE_TIMETABLE_URL = 'https://beta.jameasaifiyah.org/student/studentjadwalreport?mmid=1372';
-const LIVE_REFRESH_MS = 5 * 60 * 1000;
 const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-const SAMPLE = `Monday,08:00,08:45,Nahw,Room 4,
-Monday,09:00,09:45,Fiqh,Room 2,
-Monday,10:15,11:00,Arabic Literature,Hall A,
-Tuesday,08:00,08:45,Quran,Room 1,
-Tuesday,09:00,09:45,Tareekh,Room 5,
-Wednesday,08:00,08:45,Nahw,Room 4,
-Wednesday,09:00,09:45,Fiqh,Room 2,
-Thursday,08:00,08:45,Quran,Room 1,
-Thursday,09:00,09:45,Arabic Literature,Hall A,
-Saturday,08:00,08:45,Tareekh,Room 5,`;
 
 const els = {
   nowTime: document.querySelector('#nowTime'),
@@ -22,30 +13,19 @@ const els = {
   nextTitle: document.querySelector('#nextTitle'),
   nextMeta: document.querySelector('#nextMeta'),
   progressBar: document.querySelector('#progressBar'),
-  dayTitle: document.querySelector('#dayTitle'),
   todayList: document.querySelector('#todayList'),
-  liveFrame: document.querySelector('#liveFrame'),
   liveOpenLink: document.querySelector('#liveOpenLink'),
-  fullLiveButton: document.querySelector('#fullLiveButton'),
-  liveRefreshButton: document.querySelector('#liveRefreshButton'),
-  liveStatus: document.querySelector('#liveStatus'),
-  autoLiveToggle: document.querySelector('#autoLiveToggle'),
-  editButton: document.querySelector('#editButton'),
+  pdfInput: document.querySelector('#pdfInput'),
+  addPdfButton: document.querySelector('#addPdfButton'),
+  openPdfButton: document.querySelector('#openPdfButton'),
+  removePdfButton: document.querySelector('#removePdfButton'),
+  pdfStatus: document.querySelector('#pdfStatus'),
   installButton: document.querySelector('#installButton'),
-  editorDialog: document.querySelector('#editorDialog'),
   installDialog: document.querySelector('#installDialog'),
-  timetableInput: document.querySelector('#timetableInput'),
-  saveButton: document.querySelector('#saveButton'),
-  loadSample: document.querySelector('#loadSample'),
-  exportButton: document.querySelector('#exportButton'),
 };
 
 let deferredInstallPrompt = null;
-let lastLiveRefresh = null;
-
-if (localStorage.getItem(AUTO_LIVE_KEY) === 'true' && !location.search.includes('stay=app')) {
-  location.replace(LIVE_TIMETABLE_URL);
-}
+let pdfObjectUrl = null;
 
 function parseTimetable(text) {
   return text
@@ -109,11 +89,9 @@ function render() {
   const now = new Date();
   const items = getTimetable();
   const { current, next, todayItems } = findCurrentAndNext(items, now);
-  const todayName = DAYS[now.getDay()];
 
   els.nowTime.textContent = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   els.nowDate.textContent = now.toLocaleDateString([], { weekday: 'long', month: 'short', day: 'numeric' });
-  els.dayTitle.textContent = `${todayName}'s schedule`;
 
   if (current) {
     const start = toMinutes(current.start);
@@ -125,7 +103,7 @@ function render() {
     els.progressBar.style.width = `${progress}%`;
   } else {
     els.currentTitle.textContent = items.length ? 'Free right now' : 'No class saved';
-    els.currentMeta.textContent = items.length ? 'No saved class is active at this minute.' : 'Tap Edit timetable to add your schedule once.';
+    els.currentMeta.textContent = items.length ? 'No saved class is active at this minute.' : 'Add your timetable PDF to keep it saved on this phone.';
     els.progressBar.style.width = '0%';
   }
 
@@ -136,14 +114,14 @@ function render() {
     els.nextMeta.textContent = `${when} • ${describe(next)}`;
   } else {
     els.nextTitle.textContent = 'Nothing scheduled';
-    els.nextMeta.textContent = items.length ? 'No upcoming class found.' : 'Your next class will appear here after saving.';
+    els.nextMeta.textContent = items.length ? 'No upcoming class found.' : 'Your PDF timetable will be the main saved backup.';
   }
 
   els.todayList.innerHTML = '';
   if (!todayItems.length) {
     const empty = document.createElement('article');
     empty.className = 'slot';
-    empty.innerHTML = '<div class="slot-time">No entries</div><div><p class="slot-title">Nothing saved for today</p><p class="slot-meta">Add your real timetable in the editor.</p></div>';
+    empty.innerHTML = '<div class="slot-time">PDF backup</div><div><p class="slot-title">Add your timetable PDF</p><p class="slot-meta">Use Add PDF above to save or replace your timetable.</p></div>';
     els.todayList.append(empty);
     return;
   }
@@ -167,39 +145,84 @@ function render() {
   }
 }
 
-function refreshLiveFrame() {
-  lastLiveRefresh = new Date();
-  const separator = LIVE_TIMETABLE_URL.includes('?') ? '&' : '?';
-  els.liveFrame.src = `${LIVE_TIMETABLE_URL}${separator}refresh=${Date.now()}`;
-  els.liveStatus.textContent = `Live view refreshed at ${lastLiveRefresh.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}.`;
+function openPdfDb() {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(PDF_DB_NAME, 1);
+    request.onupgradeneeded = () => {
+      request.result.createObjectStore(PDF_STORE_NAME);
+    };
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
 }
 
-els.editButton.addEventListener('click', () => {
-  els.timetableInput.value = getSavedText();
-  els.editorDialog.showModal();
-});
+async function savePdf(file) {
+  const db = await openPdfDb();
+  await new Promise((resolve, reject) => {
+    const transaction = db.transaction(PDF_STORE_NAME, 'readwrite');
+    transaction.objectStore(PDF_STORE_NAME).put(file, 'current');
+    transaction.oncomplete = resolve;
+    transaction.onerror = () => reject(transaction.error);
+  });
+  db.close();
+  localStorage.setItem(PDF_META_KEY, JSON.stringify({
+    name: file.name,
+    size: file.size,
+    savedAt: new Date().toISOString()
+  }));
+}
 
-els.loadSample.addEventListener('click', () => {
-  els.timetableInput.value = SAMPLE;
-});
+async function getPdf() {
+  const db = await openPdfDb();
+  const file = await new Promise((resolve, reject) => {
+    const request = db.transaction(PDF_STORE_NAME, 'readonly').objectStore(PDF_STORE_NAME).get('current');
+    request.onsuccess = () => resolve(request.result || null);
+    request.onerror = () => reject(request.error);
+  });
+  db.close();
+  return file;
+}
 
-els.exportButton.addEventListener('click', async () => {
-  await navigator.clipboard.writeText(els.timetableInput.value || getSavedText());
-  els.exportButton.textContent = 'Copied';
-  setTimeout(() => { els.exportButton.textContent = 'Copy backup'; }, 1300);
-});
+async function deletePdf() {
+  const db = await openPdfDb();
+  await new Promise((resolve, reject) => {
+    const transaction = db.transaction(PDF_STORE_NAME, 'readwrite');
+    transaction.objectStore(PDF_STORE_NAME).delete('current');
+    transaction.oncomplete = resolve;
+    transaction.onerror = () => reject(transaction.error);
+  });
+  db.close();
+  localStorage.removeItem(PDF_META_KEY);
+}
 
-els.saveButton.addEventListener('click', event => {
-  event.preventDefault();
+function getPdfMeta() {
   try {
-    parseTimetable(els.timetableInput.value);
-    localStorage.setItem(STORAGE_KEY, els.timetableInput.value.trim());
-    els.editorDialog.close();
-    render();
-  } catch (error) {
-    alert(error.message);
+    return JSON.parse(localStorage.getItem(PDF_META_KEY)) || null;
+  } catch {
+    return null;
   }
-});
+}
+
+function formatFileSize(bytes) {
+  if (bytes < 1024 * 1024) {
+    return `${Math.max(1, Math.round(bytes / 1024))} KB`;
+  }
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function renderPdfStatus() {
+  const meta = getPdfMeta();
+  if (!meta) {
+    els.pdfStatus.textContent = 'No PDF added yet.';
+    els.openPdfButton.disabled = true;
+    els.removePdfButton.disabled = true;
+    return;
+  }
+  const savedAt = new Date(meta.savedAt).toLocaleDateString([], { month: 'short', day: 'numeric' });
+  els.pdfStatus.textContent = `${meta.name} • ${formatFileSize(meta.size)} • saved ${savedAt}`;
+  els.openPdfButton.disabled = false;
+  els.removePdfButton.disabled = false;
+}
 
 window.addEventListener('beforeinstallprompt', event => {
   event.preventDefault();
@@ -217,13 +240,50 @@ els.installButton.addEventListener('click', async () => {
 });
 
 els.liveOpenLink.href = LIVE_TIMETABLE_URL;
-els.fullLiveButton.addEventListener('click', () => {
-  location.href = LIVE_TIMETABLE_URL;
+els.addPdfButton.addEventListener('click', () => {
+  els.pdfInput.click();
 });
-els.liveRefreshButton.addEventListener('click', refreshLiveFrame);
-els.autoLiveToggle.checked = localStorage.getItem(AUTO_LIVE_KEY) === 'true';
-els.autoLiveToggle.addEventListener('change', () => {
-  localStorage.setItem(AUTO_LIVE_KEY, String(els.autoLiveToggle.checked));
+
+els.pdfInput.addEventListener('change', async () => {
+  const file = els.pdfInput.files[0];
+  if (!file) return;
+  if (file.type !== 'application/pdf') {
+    alert('Please choose a PDF file.');
+    els.pdfInput.value = '';
+    return;
+  }
+  try {
+    await savePdf(file);
+    renderPdfStatus();
+  } catch {
+    alert('Could not save this PDF on this device.');
+  } finally {
+    els.pdfInput.value = '';
+  }
+});
+
+els.openPdfButton.addEventListener('click', async () => {
+  try {
+    const file = await getPdf();
+    if (!file) {
+      renderPdfStatus();
+      return;
+    }
+    if (pdfObjectUrl) URL.revokeObjectURL(pdfObjectUrl);
+    pdfObjectUrl = URL.createObjectURL(file);
+    window.open(pdfObjectUrl, '_blank', 'noopener');
+  } catch {
+    alert('Could not open the saved PDF.');
+  }
+});
+
+els.removePdfButton.addEventListener('click', async () => {
+  await deletePdf();
+  if (pdfObjectUrl) {
+    URL.revokeObjectURL(pdfObjectUrl);
+    pdfObjectUrl = null;
+  }
+  renderPdfStatus();
 });
 
 if ('serviceWorker' in navigator) {
@@ -231,5 +291,5 @@ if ('serviceWorker' in navigator) {
 }
 
 render();
+renderPdfStatus();
 setInterval(render, 15000);
-setInterval(refreshLiveFrame, LIVE_REFRESH_MS);

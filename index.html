@@ -16,9 +16,9 @@
   <main class="shell">
     <section class="hero card">
       <div>
-        <p class="eyebrow">Live + offline iPhone timetable</p>
+        <p class="eyebrow">Offline iPhone timetable</p>
         <h1>My Jamea Timetable</h1>
-        <p class="lede">Open your official Jamea timetable in one tap, keep it refreshing, and still have an offline backup schedule on your phone.</p>
+        <p class="lede">Open your official Jamea timetable in one tap, and keep an offline backup schedule and PDF copy on your phone.</p>
       </div>
       <div class="clock" aria-live="polite">
         <span id="nowTime">--:--</span>
@@ -40,62 +40,33 @@
       </article>
     </section>
 
-    <section class="card live-card">
+    <section class="card official-card">
       <div class="live-copy">
-        <span class="label">Official live timetable</span>
+        <span class="label">Official timetable</span>
         <h2>Jamea student jadwal</h2>
-        <p id="liveStatus">Live page ready. Sign in once if Jamea asks, then your browser should remember the session.</p>
+        <p>Open the official Jamea page in your browser. Sign in once if Jamea asks, then your browser should remember the session.</p>
       </div>
       <div class="button-row wrap">
         <a id="liveOpenLink" class="button" href="https://beta.jameasaifiyah.org/student/studentjadwalreport?mmid=1372" target="_blank" rel="noopener">Open live page</a>
-        <button id="fullLiveButton" type="button">Full live mode</button>
-        <button id="liveRefreshButton" class="secondary" type="button">Refresh live view</button>
       </div>
-      <label class="toggle-row">
-        <input id="autoLiveToggle" type="checkbox">
-        <span>Auto-open the official live timetable when this app starts</span>
-      </label>
-      <iframe
-        id="liveFrame"
-        title="Official Jamea timetable"
-        src="https://beta.jameasaifiyah.org/student/studentjadwalreport?mmid=1372"
-        loading="lazy"
-        referrerpolicy="no-referrer">
-      </iframe>
-      <p class="hint">If the box below stays blank, Jamea is blocking embedded viewing for security. Use Open live page instead; it will still show the real-time timetable from the official site.</p>
     </section>
 
-    <section class="card controls">
+    <section class="card controls pdf-manager">
       <div>
-        <span class="label">Offline backup</span>
-        <h2 id="dayTitle">Today’s schedule</h2>
+        <span class="label">Timetable PDF</span>
+        <h2>Saved PDF copy</h2>
+        <p id="pdfStatus" class="hint">No PDF added yet.</p>
       </div>
-      <div class="button-row">
+      <div class="button-row wrap">
+        <input id="pdfInput" type="file" accept="application/pdf" hidden>
+        <button id="addPdfButton" type="button">Add PDF</button>
+        <button id="openPdfButton" type="button" disabled>Open PDF</button>
+        <button id="removePdfButton" class="secondary" type="button" disabled>Remove PDF</button>
         <button id="installButton" class="secondary">Install app</button>
-        <button id="editButton">Edit timetable</button>
       </div>
     </section>
 
     <section id="todayList" class="timeline" aria-label="Today timetable"></section>
-
-    <dialog id="editorDialog">
-      <form method="dialog" class="editor card">
-        <header>
-          <div>
-            <p class="eyebrow">Saved on this phone</p>
-            <h2>Edit timetable</h2>
-          </div>
-          <button value="cancel" class="icon-button" aria-label="Close editor">×</button>
-        </header>
-        <p class="hint">Use one line per class: <strong>day,start,end,subject,room,teacher</strong>. Example: <code>Monday,08:00,08:45,Nahw,Room 4,</code></p>
-        <textarea id="timetableInput" spellcheck="false"></textarea>
-        <div class="button-row wrap">
-          <button id="loadSample" type="button" class="secondary">Load sample</button>
-          <button id="exportButton" type="button" class="secondary">Copy backup</button>
-          <button id="saveButton" value="default">Save timetable</button>
-        </div>
-      </form>
-    </dialog>
 
     <dialog id="installDialog">
       <form method="dialog" class="editor card">

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'jamea-timetable-cache-v1';
+const CACHE_NAME = 'jamea-timetable-cache-v3';
 const APP_FILES = ['./', './index.html', './styles.css', './app.js', './manifest.webmanifest', './icons/icon.svg', './icons/icon-512.png'];
 
 self.addEventListener('install', event => {

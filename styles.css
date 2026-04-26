@@ -36,6 +36,11 @@ button, .button {
   text-decoration: none;
   box-shadow: 0 12px 24px rgba(15, 123, 99, 0.22);
 }
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.52;
+  box-shadow: none;
+}
 button.secondary, .button.secondary { color: var(--ink); background: rgba(255, 255, 255, 0.68); box-shadow: none; border: 1px solid var(--line); }
 .shell { width: min(1040px, 100%); margin: 0 auto; padding: max(1rem, env(safe-area-inset-top)) 1rem 2rem; }
 .card { border: 1px solid var(--line); background: var(--card); border-radius: 2rem; box-shadow: var(--shadow); backdrop-filter: blur(18px); }
@@ -50,29 +55,15 @@ h2 { margin-bottom: 0.4rem; font-size: clamp(1.35rem, 5vw, 2.2rem); letter-spaci
 .clock small { color: rgba(255, 246, 223, 0.76); }
 .status-grid { display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 1rem; margin: 1rem 0; }
 .status-grid .card, .controls { padding: 1.2rem; }
-.live-card { display: grid; gap: 1rem; padding: 1.2rem; margin-bottom: 1rem; }
+.official-card { display: grid; gap: 1rem; padding: 1.2rem; margin-bottom: 1rem; }
 .live-copy p { margin-bottom: 0; color: var(--muted); line-height: 1.5; }
-.toggle-row {
-  display: flex;
-  gap: 0.65rem;
-  align-items: center;
-  color: var(--muted);
-  font-weight: 700;
-  line-height: 1.35;
-}
-.toggle-row input { width: 1.15rem; height: 1.15rem; accent-color: var(--accent); }
-.live-card iframe {
-  width: 100%;
-  min-height: min(70vh, 720px);
-  border: 1px solid var(--line);
-  border-radius: 1.25rem;
-  background: rgba(255, 255, 255, 0.72);
-}
 .focus-card { background: linear-gradient(140deg, rgba(18, 59, 51, 0.96), rgba(22, 91, 75, 0.86)); color: #fff6df; }
 .focus-card .label, .focus-card p { color: rgba(255, 246, 223, 0.74); }
 .meter { height: 0.62rem; overflow: hidden; margin-top: 1rem; border-radius: 999px; background: rgba(255, 255, 255, 0.18); }
 .meter span { display: block; height: 100%; width: 0; border-radius: inherit; background: var(--accent-2); transition: width 0.4s ease; }
 .controls { display: flex; justify-content: space-between; align-items: center; gap: 1rem; margin-bottom: 1rem; }
+.pdf-manager { align-items: end; }
+.pdf-manager .hint { margin-bottom: 0; }
 .button-row { display: flex; gap: 0.7rem; justify-content: flex-end; }
 .wrap { flex-wrap: wrap; }
 .timeline { display: grid; gap: 0.75rem; }
