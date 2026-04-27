@@ -23,4 +23,4 @@ The saved PDF is the main offline backup, so you can open your latest timetable 
 
 ## Open The Site
 
-      Vist the URL: https://lego-man53.github.io/IOS-TimeTable/
+  Vist the URL: https://lego-man53.github.io/IOS-TimeTable/
