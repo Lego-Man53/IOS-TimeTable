@@ -5,7 +5,7 @@ A small installable iPhone-friendly timetable app. It works as a Progressive Web
 ## What it does
 
 - Opens your official Jamea timetable page:
-  `https://beta.jameasaifiyah.org/student/studentjadwalreport?mmid=1372`
+  `https://beta.jameasaifiyah.org/student
 - Shows the current class in real time.
 - Shows the next upcoming class.
 - Works offline after the first load.
