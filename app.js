@@ -3,6 +3,7 @@ const PDF_META_KEY = 'jamea-timetable-pdf-meta-v1';
 const PDF_DB_NAME = 'jamea-timetable-pdf-db';
 const PDF_STORE_NAME = 'pdfs';
 const LIVE_TIMETABLE_URL = 'https://beta.jameasaifiyah.org/student/studentjadwalreport?mmid=1372';
+const SHARED_PDF_URL = './timetable.pdf';
 const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
 const els = {
@@ -20,12 +21,19 @@ const els = {
   openPdfButton: document.querySelector('#openPdfButton'),
   removePdfButton: document.querySelector('#removePdfButton'),
   pdfStatus: document.querySelector('#pdfStatus'),
+  pdfViewerCard: document.querySelector('#pdfViewerCard'),
+  pdfViewerTitle: document.querySelector('#pdfViewerTitle'),
+  pdfViewerMeta: document.querySelector('#pdfViewerMeta'),
+  pdfFrame: document.querySelector('#pdfFrame'),
   installButton: document.querySelector('#installButton'),
   installDialog: document.querySelector('#installDialog'),
 };
 
 let deferredInstallPrompt = null;
 let pdfObjectUrl = null;
+let activePdfUrl = null;
+let hasPdfSource = false;
+let pdfSourceLabel = '';
 
 function parseTimetable(text) {
   return text
@@ -102,8 +110,12 @@ function render() {
     els.currentMeta.textContent = describe(current);
     els.progressBar.style.width = `${progress}%`;
   } else {
-    els.currentTitle.textContent = items.length ? 'Free right now' : 'No class saved';
-    els.currentMeta.textContent = items.length ? 'No saved class is active at this minute.' : 'Add your timetable PDF to keep it saved on this phone.';
+    els.currentTitle.textContent = items.length ? 'Free right now' : hasPdfSource ? 'PDF timetable ready' : 'No timetable PDF';
+    els.currentMeta.textContent = items.length
+      ? 'No saved class is active at this minute.'
+      : hasPdfSource
+        ? `${pdfSourceLabel} is ready below.`
+        : 'Add your timetable PDF to show your schedule here.';
     els.progressBar.style.width = '0%';
   }
 
@@ -113,15 +125,21 @@ function render() {
     els.nextTitle.textContent = next.subject;
     els.nextMeta.textContent = `${when} • ${describe(next)}`;
   } else {
-    els.nextTitle.textContent = 'Nothing scheduled';
-    els.nextMeta.textContent = items.length ? 'No upcoming class found.' : 'Your PDF timetable will be the main saved backup.';
+    els.nextTitle.textContent = items.length ? 'Nothing scheduled' : hasPdfSource ? 'Open your PDF' : 'No PDF added';
+    els.nextMeta.textContent = items.length
+      ? 'No upcoming class found.'
+      : hasPdfSource
+        ? 'Use Open PDF or scroll down to view the timetable.'
+        : 'Add a PDF to make it your saved timetable.';
   }
 
   els.todayList.innerHTML = '';
   if (!todayItems.length) {
     const empty = document.createElement('article');
     empty.className = 'slot';
-    empty.innerHTML = '<div class="slot-time">PDF backup</div><div><p class="slot-title">Add your timetable PDF</p><p class="slot-meta">Use Add PDF above to save or replace your timetable.</p></div>';
+    empty.innerHTML = hasPdfSource
+      ? '<div class="slot-time">PDF ready</div><div><p class="slot-title">Your timetable PDF is shown below</p><p class="slot-meta">Use Add PDF to replace it on this device.</p></div>'
+      : '<div class="slot-time">PDF backup</div><div><p class="slot-title">Add your timetable PDF</p><p class="slot-meta">Use Add PDF above to save or replace your timetable.</p></div>';
     els.todayList.append(empty);
     return;
   }
@@ -210,18 +228,71 @@ function formatFileSize(bytes) {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-function renderPdfStatus() {
+async function hasSharedPdf() {
+  try {
+    const response = await fetch(SHARED_PDF_URL, { cache: 'no-store', headers: { Accept: 'application/pdf' } });
+    const contentType = response.headers.get('content-type') || '';
+    return response.ok && contentType.includes('application/pdf');
+  } catch {
+    return false;
+  }
+}
+
+function setPdfViewer(url, title, meta) {
+  activePdfUrl = url;
+  hasPdfSource = true;
+  pdfSourceLabel = title;
+  els.pdfViewerCard.hidden = false;
+  els.pdfViewerTitle.textContent = title;
+  els.pdfViewerMeta.textContent = meta;
+  els.pdfFrame.src = url;
+}
+
+function clearPdfViewer() {
+  activePdfUrl = null;
+  hasPdfSource = false;
+  pdfSourceLabel = '';
+  els.pdfViewerCard.hidden = true;
+  els.pdfFrame.removeAttribute('src');
+}
+
+async function showLocalPdf(meta) {
+  const file = await getPdf();
+  if (!file) return false;
+  if (pdfObjectUrl) URL.revokeObjectURL(pdfObjectUrl);
+  pdfObjectUrl = URL.createObjectURL(file);
+  setPdfViewer(pdfObjectUrl, 'Saved on this device', `${meta.name} is shown below.`);
+  return true;
+}
+
+async function renderPdfStatus() {
   const meta = getPdfMeta();
-  if (!meta) {
-    els.pdfStatus.textContent = 'No PDF added yet.';
-    els.openPdfButton.disabled = true;
-    els.removePdfButton.disabled = true;
+  if (meta && await showLocalPdf(meta)) {
+    const savedAt = new Date(meta.savedAt).toLocaleDateString([], { month: 'short', day: 'numeric' });
+    els.pdfStatus.textContent = `${meta.name} • ${formatFileSize(meta.size)} • saved ${savedAt}`;
+    els.addPdfButton.textContent = 'Replace PDF';
+    els.openPdfButton.disabled = false;
+    els.removePdfButton.disabled = false;
+    render();
     return;
   }
-  const savedAt = new Date(meta.savedAt).toLocaleDateString([], { month: 'short', day: 'numeric' });
-  els.pdfStatus.textContent = `${meta.name} • ${formatFileSize(meta.size)} • saved ${savedAt}`;
-  els.openPdfButton.disabled = false;
-  els.removePdfButton.disabled = false;
+
+  if (await hasSharedPdf()) {
+    setPdfViewer(`${SHARED_PDF_URL}?v=${Date.now()}`, 'Shared GitHub PDF', 'This PDF is loaded from timetable.pdf in your GitHub Pages site.');
+    els.pdfStatus.textContent = 'Using shared timetable.pdf from GitHub.';
+    els.addPdfButton.textContent = 'Add local PDF';
+    els.openPdfButton.disabled = false;
+    els.removePdfButton.disabled = true;
+    render();
+    return;
+  }
+
+  clearPdfViewer();
+  els.pdfStatus.textContent = 'No PDF added yet. To share one across devices, add a file named timetable.pdf to GitHub.';
+  els.addPdfButton.textContent = 'Add PDF';
+  els.openPdfButton.disabled = true;
+  els.removePdfButton.disabled = true;
+  render();
 }
 
 window.addEventListener('beforeinstallprompt', event => {
@@ -254,7 +325,7 @@ els.pdfInput.addEventListener('change', async () => {
   }
   try {
     await savePdf(file);
-    renderPdfStatus();
+    await renderPdfStatus();
   } catch {
     alert('Could not save this PDF on this device.');
   } finally {
@@ -264,14 +335,11 @@ els.pdfInput.addEventListener('change', async () => {
 
 els.openPdfButton.addEventListener('click', async () => {
   try {
-    const file = await getPdf();
-    if (!file) {
-      renderPdfStatus();
+    if (activePdfUrl) {
+      window.open(activePdfUrl, '_blank', 'noopener');
       return;
     }
-    if (pdfObjectUrl) URL.revokeObjectURL(pdfObjectUrl);
-    pdfObjectUrl = URL.createObjectURL(file);
-    window.open(pdfObjectUrl, '_blank', 'noopener');
+    await renderPdfStatus();
   } catch {
     alert('Could not open the saved PDF.');
   }
@@ -283,7 +351,7 @@ els.removePdfButton.addEventListener('click', async () => {
     URL.revokeObjectURL(pdfObjectUrl);
     pdfObjectUrl = null;
   }
-  renderPdfStatus();
+  await renderPdfStatus();
 });
 
 if ('serviceWorker' in navigator) {

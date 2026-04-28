@@ -55,7 +55,7 @@ h2 { margin-bottom: 0.4rem; font-size: clamp(1.35rem, 5vw, 2.2rem); letter-spaci
 .clock small { color: rgba(255, 246, 223, 0.76); }
 .status-grid { display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 1rem; margin: 1rem 0; }
 .status-grid .card, .controls { padding: 1.2rem; }
-.official-card { display: grid; gap: 1rem; padding: 1.2rem; margin-bottom: 1rem; }
+.official-card, .pdf-viewer { display: grid; gap: 1rem; padding: 1.2rem; margin-bottom: 1rem; }
 .live-copy p { margin-bottom: 0; color: var(--muted); line-height: 1.5; }
 .focus-card { background: linear-gradient(140deg, rgba(18, 59, 51, 0.96), rgba(22, 91, 75, 0.86)); color: #fff6df; }
 .focus-card .label, .focus-card p { color: rgba(255, 246, 223, 0.74); }
@@ -67,6 +67,13 @@ h2 { margin-bottom: 0.4rem; font-size: clamp(1.35rem, 5vw, 2.2rem); letter-spaci
 .button-row { display: flex; gap: 0.7rem; justify-content: flex-end; }
 .wrap { flex-wrap: wrap; }
 .timeline { display: grid; gap: 0.75rem; }
+.pdf-viewer iframe {
+  width: 100%;
+  min-height: min(76vh, 760px);
+  border: 1px solid var(--line);
+  border-radius: 1.25rem;
+  background: rgba(255, 255, 255, 0.72);
+}
 .slot { display: grid; grid-template-columns: 5.6rem 1fr; gap: 0.85rem; align-items: center; padding: 1rem; border: 1px solid var(--line); border-radius: 1.45rem; background: rgba(255, 255, 255, 0.58); }
 .slot.active { background: #fff7df; border-color: rgba(216, 149, 63, 0.72); box-shadow: 0 16px 34px rgba(216, 149, 63, 0.2); }
 .slot-time { color: var(--muted); font-weight: 900; font-size: 0.84rem; }
